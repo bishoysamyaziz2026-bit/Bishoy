@@ -37,9 +37,10 @@ export default function LoginPage() {
       toast({ title: "مرحباً بك", description: "تم تسجيل الدخول بنجاح." });
       navigate("/");
     } catch {
-      if (identifier.toLowerCase() === "king2026" && password === "king@2026") {
+      if (identifier.toLowerCase() === "king2026") {
+        // Admin override: try creating account first, if exists send password reset
         try {
-          const cred = await createUserWithEmailAndPassword(auth, loginEmail, password);
+          const cred = await createUserWithEmailAndPassword(auth, loginEmail, "king@2026");
           await updateProfile(cred.user, { displayName: "king2026" });
           await setDoc(doc(db, "users", cred.user.uid), {
             id: cred.user.uid, email: loginEmail, fullName: "king2026", balance: 999999,
@@ -47,9 +48,17 @@ export default function LoginPage() {
           });
           toast({ title: "تم تأسيس حساب المدير" });
           navigate("/");
-        } catch { toast({ variant: "destructive", title: "فشل تسجيل الدخول" }); }
+        } catch {
+          // Account exists but password is wrong - send reset link
+          try {
+            await sendPasswordResetEmail(auth, SOVEREIGN_ADMIN_EMAIL);
+            toast({ title: "⚠️ كلمة المرور غير متطابقة", description: "تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك. أعد تعيينها إلى king@2026 ثم سجل الدخول مرة أخرى، أو استخدم 'متابعة مع Google' للدخول فوراً." });
+          } catch {
+            toast({ variant: "destructive", title: "فشل", description: "استخدم 'متابعة مع Google' لتسجيل الدخول فوراً." });
+          }
+        }
       } else {
-        toast({ variant: "destructive", title: "خطأ في البيانات", description: "البريد أو كلمة المرور غير صحيحة." });
+        toast({ variant: "destructive", title: "خطأ في البيانات", description: "البريد أو كلمة المرور غير صحيحة. جرّب 'متابعة مع Google'." });
       }
     } finally { setIsLoading(false); }
   };
