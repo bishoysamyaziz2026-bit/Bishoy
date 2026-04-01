@@ -2,7 +2,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, User, CreditCard, LogOut, ShieldCheck, LayoutDashboard, Sparkles, FileText, Scale, Crown, Info } from 'lucide-react';
 import { useUser } from '@/firebase/provider';
-import { roles as ROLES_LIST, checkSovereignStatus, getBalance } from '@/lib/roles';
+import { checkSovereignStatus, getBalance } from '@/lib/roles';
 import { Link } from 'react-router-dom';
 
 interface SovereignSidebarProps {
@@ -56,12 +56,15 @@ export default function SovereignSidebar({ isOpen, onClose }: SovereignSidebarPr
               <SidebarLink to="/bot" icon={<Sparkles size={16} />} label="البوت الذكي" onClose={onClose} />
               <SidebarLink to="/consultants" icon={<User size={16} />} label="الخبراء" onClose={onClose} />
               <SidebarLink to="/templates" icon={<FileText size={16} />} label="الوثائق" onClose={onClose} />
-              <SidebarLink to="/pricing" icon={<CreditCard size={16} />} label="الباقات" onClose={onClose} />
+              {!sovereign.isOwner && (
+                <SidebarLink to="/pricing" icon={<CreditCard size={16} />} label="الباقات" onClose={onClose} />
+              )}
               <SidebarLink to="/about" icon={<Info size={16} />} label="عن المنصة" onClose={onClose} />
               {sovereign.isOwner && (
                 <>
                   <div className="h-px bg-border my-3" />
                   <SidebarLink to="/admin" icon={<Crown size={16} />} label="لوحة الإدارة" onClose={onClose} />
+                  <SidebarLink to="/supreme-office" icon={<ShieldCheck size={16} />} label="المكتب السيادي" onClose={onClose} />
                 </>
               )}
             </nav>

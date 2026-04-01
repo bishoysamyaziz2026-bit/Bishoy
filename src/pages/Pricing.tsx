@@ -1,5 +1,9 @@
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Zap, Crown, CheckCircle2 } from "lucide-react";
+import { useUser } from "@/firebase/provider";
+import { checkSovereignStatus } from "@/lib/roles";
 
 const item = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0, transition: { duration: 0.4 } } };
 const container = { hidden: {}, show: { transition: { staggerChildren: 0.1 } } };
@@ -11,6 +15,16 @@ const PLANS = [
 ];
 
 export default function PricingPage() {
+  const navigate = useNavigate();
+  const { user } = useUser();
+  const sovereign = checkSovereignStatus(user?.email);
+
+  useEffect(() => {
+    if (sovereign.isOwner) navigate("/supreme-office", { replace: true });
+  }, [sovereign.isOwner, navigate]);
+
+  if (sovereign.isOwner) return null;
+
   return (
     <div className="min-h-screen bg-background text-foreground p-6 pb-20" dir="rtl">
       <motion.div variants={container} initial="hidden" animate="show" className="max-w-lg mx-auto space-y-8">

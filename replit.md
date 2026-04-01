@@ -19,6 +19,16 @@ A React/Vite frontend application for an Arabic legal AI platform. Users can sig
 - `src/components/` - Reusable UI components
 - `vite.config.ts` - Vite config (port 5000, host 0.0.0.0 for Replit)
 
+## Admin / Supreme Office
+- Owner email: `bishoysamy390@gmail.com` — auto-assigned `ADMIN` role and `∞` balance on first login via Firebase provider (`src/firebase/provider.tsx`)
+- The `checkSovereignStatus()` function in `src/lib/roles.ts` drives all admin checks
+- `/pricing` redirects the owner to `/supreme-office` automatically; pricing link hidden from sidebar for admin
+- `/supreme-office` — sovereign-only control center with 3 tabs:
+  - **Verification Hub**: Review/approve/reject user-uploaded ID & lawyer syndicate card requests (Firestore: `verification_requests` collection)
+  - **Expert Management**: Full CRUD for legal consultants (Firestore: `consultants` collection)
+  - **Document Generation**: Issue professional legal PDFs with user's Full Name & ID Number injected
+- Floating dock shows "المكتب" (Supreme Office) icon for admin instead of the Admin label
+
 ## Development
 - Run: `npm run dev` (starts on port 5000)
 - Build: `npm run build`
