@@ -157,8 +157,8 @@ export default function MissionControl() {
   );
 }
 
-function QuickAction({ href, icon, title, desc, color }: any) {
-  const colorMap: any = {
+function QuickAction({ href, icon, title, desc, color }: { href: string; icon: React.ReactNode; title: string; desc: string; color: string }) {
+  const colorMap: Record<string, string> = {
     primary: "text-primary bg-primary/8 border-primary/15 hover:border-primary/30",
     violet: "text-violet-400 bg-violet-500/8 border-violet-500/15 hover:border-violet-500/30",
     amber: "text-amber-400 bg-amber-500/8 border-amber-500/15 hover:border-amber-500/30",
@@ -188,7 +188,7 @@ function StatusCard({ label, value }: { label: string; value: string }) {
   );
 }
 
-function DockBtn({ href, icon, label, active }: any) {
+function DockBtn({ href, icon, label, active }: { href: string; icon: React.ReactNode; label: string; active: boolean }) {
   return (
     <Link to={href} className="flex-1">
       <button className={`w-full py-3 rounded-2xl flex flex-col items-center gap-1 transition-all duration-300 ${active ? 'bg-primary/15 text-primary' : 'text-muted-foreground hover:text-foreground'}`}>

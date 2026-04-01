@@ -1,3 +1,5 @@
+import { UserProfile } from "@/firebase/provider";
+
 export const roles = {
   ADMIN: "admin",
   MODERATOR: "moderator",
@@ -47,7 +49,7 @@ export const getPermissions = (role: UserRole | string | null | undefined, email
   }
 };
 
-export const getBalance = (profile: any) => {
+export const getBalance = (profile: UserProfile | null) => {
   const sovereign = checkSovereignStatus(profile?.email);
   if (sovereign.hasInfiniteVault) return "∞";
   return profile?.balance ?? 50;

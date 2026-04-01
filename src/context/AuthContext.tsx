@@ -1,9 +1,11 @@
 import React, { createContext, useContext, ReactNode } from 'react';
+import { User } from 'firebase/auth';
 import { useUser } from '@/firebase/provider';
+import { UserProfile } from '@/firebase/provider';
 
 interface AuthContextType {
-  user: any;
-  profile: any;
+  user: User | null;
+  profile: UserProfile | null;
   role: string;
   loading: boolean;
   signOut: () => Promise<void>;

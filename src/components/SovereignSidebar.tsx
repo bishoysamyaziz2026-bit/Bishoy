@@ -53,18 +53,17 @@ export default function SovereignSidebar({ isOpen, onClose }: SovereignSidebarPr
             <nav className="flex-1 p-4 space-y-1 overflow-y-auto scrollbar-none">
               <SidebarLink to="/" icon={<Scale size={16} />} label="الرئيسية" onClose={onClose} />
               <SidebarLink to="/dashboard" icon={<LayoutDashboard size={16} />} label="لوحة التحكم" onClose={onClose} />
-              <SidebarLink to="/bot" icon={<Sparkles size={16} />} label="البوت الذكي" onClose={onClose} />
+              <SidebarLink to="/bot" icon={<Sparkles size={16} />} label="المستشار AI" onClose={onClose} />
               <SidebarLink to="/consultants" icon={<User size={16} />} label="الخبراء" onClose={onClose} />
               <SidebarLink to="/templates" icon={<FileText size={16} />} label="الوثائق" onClose={onClose} />
               {!sovereign.isOwner && (
                 <SidebarLink to="/pricing" icon={<CreditCard size={16} />} label="الباقات" onClose={onClose} />
               )}
               <SidebarLink to="/about" icon={<Info size={16} />} label="عن المنصة" onClose={onClose} />
-              {sovereign.isOwner && (
+              {sovereign.isOwner && user?.email === 'bishoysamy390@gmail.com' && (
                 <>
                   <div className="h-px bg-border my-3" />
-                  <SidebarLink to="/admin" icon={<Crown size={16} />} label="لوحة الإدارة" onClose={onClose} />
-                  <SidebarLink to="/supreme-office" icon={<ShieldCheck size={16} />} label="المكتب السيادي" onClose={onClose} />
+                  <SidebarLink to="/system-control" icon={<ShieldCheck size={16} />} label="التحكم في النظام" onClose={onClose} />
                 </>
               )}
             </nav>

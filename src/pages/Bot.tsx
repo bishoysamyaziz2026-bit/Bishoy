@@ -1,11 +1,19 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, Loader2, Sparkles, Plus, Camera, FileText, X, Scale, Users } from "lucide-react";
+import { Send, Loader2, Sparkles, Plus, Camera, FileText, X, Scale, Users, Save } from "lucide-react";
 import SovereignLayout from "@/components/SovereignLayout";
 import { useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase/provider";
 import { useToast } from "@/hooks/use-toast";
 import { collection, query, orderBy, limit, addDoc, serverTimestamp } from "firebase/firestore";
 import { Link } from "react-router-dom";
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import { supabaseClient } from "@/lib/supabaseClient";
+
+interface Message {
+  id: string;
+  role: string;
+  text: string;
+}
 
 export default function BotPage() {
   const { user } = useUser();
@@ -15,6 +23,9 @@ export default function BotPage() {
   const [isTyping, setIsTyping] = useState(false);
   const [isCapsuleOpen, setIsCapsuleOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
+  const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
 
   const chatQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
@@ -26,18 +37,20 @@ export default function BotPage() {
     if (scrollRef.current) scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, isTyping]);
 
-  const handleSend = async () => {
-    const text = inputText.trim();
-    if (!text || isTyping || !db || !user) return;
-    setInputText("");
-    setIsTyping(true);
-    setIsCapsuleOpen(false);
+  const handleSaveCase = async () => {
+    if (!messages || messages.length === 0 || !user) return;
     try {
-      await addDoc(collection(db, "users", user.uid, "chatHistory"), { role: "user", text, timestamp: serverTimestamp() });
-      const aiResponse = `تحليل قانوني: "${text}" - هذا استفسار مهم. بناءً على القوانين المعمول بها، أنصحك بالتالي: يرجى استشارة خبير قانوني متخصص للحصول على رأي قانوني رسمي. يمكنك التواصل مع أحد خبرائنا من مجلس الخبراء.`;
-      await addDoc(collection(db, "users", user.uid, "chatHistory"), { role: "ai", text: aiResponse, timestamp: serverTimestamp() });
-    } catch { toast({ variant: "destructive", title: "فشل الإرسال" }); }
-    finally { setIsTyping(false); }
+      const caseData = {
+        userId: user.uid,
+        title: `قضية ${new Date().toLocaleDateString('ar')}`,
+        messages: messages,
+        createdAt: new Date().toISOString(),
+      };
+      await supabaseClient.from('cases').insert(caseData);
+      toast({ title: "تم حفظ القضية بنجاح" });
+    } catch (error) {
+      toast({ variant: "destructive", title: "فشل حفظ القضية" });
+    }
   };
 
   return (
@@ -51,12 +64,12 @@ export default function BotPage() {
                   <Scale size={36} className="text-primary" />
                 </div>
                 <div className="space-y-3">
-                  <h3 className="text-2xl font-black text-foreground tracking-tight">كيف أقدر أساعدك؟</h3>
+                  <h3 className="text-2xl font-black text-foreground tracking-tight">المستشار AI</h3>
                   <p className="text-sm text-muted-foreground font-medium max-w-xs mx-auto">اشرح موقفك القانوني وسأقوم بالتحليل الفوري</p>
                 </div>
               </motion.div>
             )}
-            {messages?.map((m: any) => (
+            {messages?.map((m: Message) => (
               <motion.div key={m.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
                 className={`p-4 rounded-2xl max-w-[85%] text-sm font-medium leading-relaxed ${
                   m.role === 'user' ? 'bg-primary text-primary-foreground mr-auto rounded-br-md' : 'glass-panel text-foreground border border-border ml-auto rounded-bl-md'
@@ -94,6 +107,10 @@ export default function BotPage() {
               </button>
               <input value={inputText} onChange={(e) => setInputText(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                 placeholder="اكتب استفسارك القانوني..." className="flex-1 bg-transparent border-none outline-none px-2 text-sm font-medium text-foreground placeholder:text-muted-foreground/40 text-right" />
+              <button onClick={handleSaveCase} disabled={!messages || messages.length === 0}
+                className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 ${messages && messages.length > 0 ? 'bg-amber-500/15 text-amber-400 hover:bg-amber-500/25' : 'bg-accent text-muted-foreground opacity-50'}`}>
+                <Save size={16} />
+              </button>
               <button onClick={handleSend} disabled={!inputText.trim() || isTyping}
                 className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 ${inputText.trim() && !isTyping ? 'bg-primary text-primary-foreground shadow-neon' : 'bg-accent text-muted-foreground opacity-50'}`}>
                 {isTyping ? <Loader2 className="animate-spin" size={16} /> : <Send size={16} className="rotate-180" />}
@@ -106,8 +123,8 @@ export default function BotPage() {
   );
 }
 
-function CapsuleTool({ icon, label, href, color }: any) {
-  const colors: any = { primary: "text-primary hover:bg-primary/10", amber: "text-amber-400 hover:bg-amber-500/10", violet: "text-violet-400 hover:bg-violet-500/10" };
+function CapsuleTool({ icon, label, href, color }: { icon: React.ReactNode; label: string; href: string; color: string }) {
+  const colors: Record<string, string> = { primary: "text-primary hover:bg-primary/10", amber: "text-amber-400 hover:bg-amber-500/10", violet: "text-violet-400 hover:bg-violet-500/10" };
   return (
     <Link to={href}>
       <button className={`w-full flex flex-col items-center gap-2 p-4 rounded-xl border border-border bg-accent/50 transition-all btn-hover ${colors[color]}`}>

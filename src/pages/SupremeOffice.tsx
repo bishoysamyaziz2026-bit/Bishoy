@@ -6,8 +6,26 @@ import {
   BadgeCheck, IdCard
 } from "lucide-react";
 import SovereignLayout from "@/components/SovereignLayout";
-import { useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase/provider";
+import { useUser, useFirestore, useCollection, useMemoFirebase, UserProfile } from "@/firebase/provider";
 import { useToast } from "@/hooks/use-toast";
+import { supabaseClient } from "@/lib/supabaseClient";
+
+interface Consultant {
+  id: string;
+  name: string;
+  specialty?: string;
+  rating?: number;
+  phone?: string;
+  bio?: string;
+}
+
+interface Case {
+  id: string;
+  userId: string;
+  title: string;
+  messages: unknown[];
+  createdAt: string;
+}
 import { checkSovereignStatus } from "@/lib/roles";
 import {
   collection, doc, addDoc, updateDoc, deleteDoc,
@@ -18,6 +36,7 @@ import jsPDF from "jspdf";
 const TABS = [
   { id: "verification", label: "التحقق من الهوية", icon: <IdCard size={15} /> },
   { id: "experts", label: "إدارة الخبراء", icon: <Users size={15} /> },
+  { id: "cases", label: "إدارة القضايا", icon: <FileText size={15} /> },
   { id: "documents", label: "إصدار الوثائق", icon: <FileText size={15} /> },
 ];
 
@@ -83,6 +102,7 @@ export default function SupremeOfficePage() {
         <AnimatePresence mode="wait">
           {activeTab === "verification" && <VerificationHub key="ver" />}
           {activeTab === "experts" && <ExpertManagement key="exp" />}
+          {activeTab === "cases" && <CaseManager key="cas" />}
           {activeTab === "documents" && <DocumentGeneration key="doc" />}
         </AnimatePresence>
       </div>
@@ -143,7 +163,7 @@ function VerificationHub() {
           <p className="text-[10px] text-muted-foreground">ستظهر هنا طلبات التحقق من المستخدمين</p>
         </motion.div>
       ) : (
-        requests.map((req: any) => (
+        requests.map((req: UserProfile) => (
           <motion.div key={req.id} variants={item} className="glass-panel border border-border rounded-2xl p-4 space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -219,9 +239,10 @@ function ExpertManagement() {
 
   const consultantsQuery = useMemoFirebase(() => db ? collection(db, "consultants") : null, [db]);
   const { data: consultants, isLoading } = useCollection(consultantsQuery);
+  const consultantsData = consultants as Consultant[];
 
   const openAdd = () => { setForm(EMPTY_EXPERT); setEditing(null); setShowForm(true); };
-  const openEdit = (c: any) => { setForm({ name: c.name || "", specialty: c.specialty || "", rating: c.rating || 5, phone: c.phone || "", bio: c.bio || "" }); setEditing(c.id); setShowForm(true); };
+  const openEdit = (c: Consultant) => { setForm({ name: c.name || "", specialty: c.specialty || "", rating: c.rating || 5, phone: c.phone || "", bio: c.bio || "" }); setEditing(c.id); setShowForm(true); };
   const cancel = () => { setShowForm(false); setEditing(null); setForm(EMPTY_EXPERT); };
 
   const handleSave = async () => {
@@ -324,14 +345,14 @@ function ExpertManagement() {
       {/* List */}
       {isLoading ? (
         <div className="flex justify-center py-12 opacity-30"><Loader2 className="animate-spin text-primary h-8 w-8" /></div>
-      ) : consultants.length === 0 ? (
+      ) : consultantsData.length === 0 ? (
         <motion.div variants={item} className="text-center py-16 space-y-3">
           <Users size={32} className="text-muted-foreground/30 mx-auto" />
           <p className="text-sm font-bold text-muted-foreground">لا يوجد خبراء بعد</p>
           <p className="text-[10px] text-muted-foreground">ابدأ بإضافة أول خبير قانوني</p>
         </motion.div>
       ) : (
-        consultants.map((c: any) => (
+        consultantsData.map((c: Consultant) => (
           <motion.div key={c.id} variants={item} className="glass-panel border border-border rounded-2xl p-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-bold text-lg border border-primary/20">
@@ -362,6 +383,51 @@ function ExpertManagement() {
               >
                 {deleting === c.id ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
               </button>
+            </div>
+          </motion.div>
+        ))
+      )}
+    </motion.div>
+  );
+}
+
+/* ─── CASE MANAGER ─────────────────────────────────────────────────────────── */
+function CaseManager() {
+  const [cases, setCases] = useState<Case[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchCases = async () => {
+      const { data, error } = await supabaseClient.from('cases').select('*');
+      if (error) console.error(error);
+      else setCases(data || []);
+      setLoading(false);
+    };
+    fetchCases();
+  }, []);
+
+  return (
+    <motion.div variants={container} initial="hidden" animate="show" className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-black text-foreground">إدارة القضايا</h2>
+      </div>
+      {loading ? (
+        <div className="flex justify-center py-12"><Loader2 className="animate-spin text-primary h-8 w-8" /></div>
+      ) : cases.length === 0 ? (
+        <motion.div variants={item} className="text-center py-16 space-y-3">
+          <FileText size={32} className="text-muted-foreground/30 mx-auto" />
+          <p className="text-sm font-bold text-muted-foreground">لا توجد قضايا محفوظة</p>
+          <p className="text-[10px] text-muted-foreground">ستظهر هنا القضايا المحفوظة من المستشار AI</p>
+        </motion.div>
+      ) : (
+        cases.map((c: Case) => (
+          <motion.div key={c.id} variants={item} className="glass-panel border border-border rounded-2xl p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-bold text-foreground">{c.title}</p>
+                <p className="text-[10px] text-muted-foreground">{c.createdAt}</p>
+              </div>
+              <div className="text-xs text-muted-foreground">{c.messages?.length || 0} رسائل</div>
             </div>
           </motion.div>
         ))

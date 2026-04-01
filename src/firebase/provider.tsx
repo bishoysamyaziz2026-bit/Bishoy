@@ -1,8 +1,20 @@
 import React, { DependencyList, createContext, useContext, ReactNode, useMemo, useState, useEffect } from 'react';
 import { FirebaseApp } from 'firebase/app';
-import { Firestore, doc, onSnapshot, setDoc, getDoc, serverTimestamp, collection, query, Query, onSnapshot as onSnapCollection, DocumentData } from 'firebase/firestore';
+import { Firestore, doc, onSnapshot, setDoc, getDoc, serverTimestamp, collection, query, Query, onSnapshot as onSnapCollection, DocumentData, Timestamp, DocumentReference, DocumentSnapshot } from 'firebase/firestore';
 import { Auth, User, onAuthStateChanged, signOut as firebaseSignOut, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { roles as ROLES_LIST, checkSovereignStatus } from '@/lib/roles';
+
+interface UserProfile {
+  id: string;
+  email: string | null;
+  fullName: string;
+  balance: number;
+  role: string;
+  createdAt: Timestamp;
+  isBanned: boolean;
+}
+
+export type { UserProfile };
 
 interface FirebaseProviderProps {
   children: ReactNode;
@@ -13,7 +25,7 @@ interface FirebaseProviderProps {
 
 interface UserAuthState {
   user: User | null;
-  profile: any | null;
+  profile: UserProfile | null;
   role: string;
   isUserLoading: boolean;
   userError: Error | null;
@@ -55,7 +67,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({ children, fi
           await setDoc(userRef, { balance: 999999, role: ROLES_LIST.ADMIN }, { merge: true });
         }
         const unsubscribeProfile = onSnapshot(userRef, (snap) => {
-          const data = snap.data();
+          const data = snap.data() as UserProfile | undefined;
           let detectedRole = data?.role || initialRole;
           if (sovereign.isOwner) detectedRole = ROLES_LIST.ADMIN;
           setAuthState({ user: firebaseUser, profile: data || null, role: detectedRole, isUserLoading: false, userError: null });
@@ -101,7 +113,7 @@ export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T {
 
 // Collection hook
 export function useCollection(queryRef: Query<DocumentData> | null) {
-  const [data, setData] = useState<any[]>([]);
+  const [data, setData] = useState<DocumentData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -118,14 +130,14 @@ export function useCollection(queryRef: Query<DocumentData> | null) {
 }
 
 // Doc hook
-export function useDoc(docRef: any) {
-  const [data, setData] = useState<any>(null);
+export function useDoc(docRef: DocumentReference | null) {
+  const [data, setData] = useState<DocumentData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (!docRef) { setIsLoading(false); return; }
     setIsLoading(true);
-    const unsub = onSnapshot(docRef, (snap: any) => {
+    const unsub = onSnapshot(docRef, (snap: DocumentSnapshot) => {
       setData(snap.exists() ? { id: snap.id, ...snap.data() } : null);
       setIsLoading(false);
     }, () => setIsLoading(false));

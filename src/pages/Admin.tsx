@@ -2,7 +2,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { ShieldCheck, Users, Zap, Ban, Star, Loader2, LogOut, ShieldAlert } from "lucide-react";
 import SovereignLayout from "@/components/SovereignLayout";
-import { useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase/provider";
+import { useUser, useFirestore, useCollection, useMemoFirebase, UserProfile } from "@/firebase/provider";
 import { useToast } from "@/hooks/use-toast";
 import { collection, query, where, doc, updateDoc, getDocs, increment } from "firebase/firestore";
 import { roles as ROLES_LIST, checkSovereignStatus } from "@/lib/roles";
@@ -75,7 +75,7 @@ export default function AdminPage() {
           </div>
           {citizensLoading ? (
             <div className="flex justify-center py-12"><Loader2 className="animate-spin text-muted-foreground h-8 w-8" /></div>
-          ) : citizens?.map((c: any) => (
+          ) : citizens?.map((c: UserProfile) => (
             <div key={c.id} className="glass-panel border border-border p-4 rounded-2xl flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-accent flex items-center justify-center font-bold text-muted-foreground border border-border">{c.fullName?.charAt(0)}</div>
@@ -98,8 +98,8 @@ export default function AdminPage() {
   );
 }
 
-function ActionBtn({ icon, label, onClick, color }: any) {
-  const colors: any = {
+function ActionBtn({ icon, label, onClick, color }: { icon: React.ReactNode; label: string; onClick: () => void; color: string }) {
+  const colors: Record<string, string> = {
     emerald: "text-emerald-400 bg-emerald-500/8 border-emerald-500/15 hover:bg-emerald-500/15",
     amber: "text-amber-400 bg-amber-500/8 border-amber-500/15 hover:bg-amber-500/15",
     red: "text-red-400 bg-red-500/8 border-red-500/15 hover:bg-red-500/15"

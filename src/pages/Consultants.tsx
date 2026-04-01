@@ -6,12 +6,19 @@ import { useFirestore, useCollection, useMemoFirebase } from "@/firebase/provide
 import { collection } from "firebase/firestore";
 import { motion } from "framer-motion";
 
+interface Consultant {
+  id: string;
+  name: string;
+  specialty?: string;
+  rating?: number;
+}
+
 export default function ConsultantsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const db = useFirestore();
   const { data: consultants, isLoading } = useCollection(useMemoFirebase(() => db ? collection(db, "consultants") : null, [db]));
 
-  const filtered = consultants?.filter((c: any) => c.name?.toLowerCase().includes(searchTerm.toLowerCase()));
+  const filtered = consultants?.filter((c: Consultant) => c.name?.toLowerCase().includes(searchTerm.toLowerCase()));
 
   return (
     <SovereignLayout activeId="consultants">
@@ -33,7 +40,7 @@ export default function ConsultantsPage() {
               <p className="text-xs text-muted-foreground">سيتم إضافة الخبراء قريباً</p>
             </div>
           ) : (
-            filtered?.map((c: any) => (
+            filtered?.map((c: Consultant) => (
               <motion.div key={c.id} whileHover={{ scale: 1.01 }} className="glass-panel border border-border rounded-2xl p-4 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-bold text-lg border border-primary/20">{c.name?.charAt(0)}</div>

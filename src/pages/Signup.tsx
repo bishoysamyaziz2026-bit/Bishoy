@@ -70,8 +70,8 @@ export default function SignupPage() {
       });
       toast({ title: isLawyer ? "تم التسجيل بنجاح" : "أهلاً بك!", description: isLawyer ? "بانتظار مراجعة وثائقك." : "حصلت على 50 EGP رصيد مجاني." });
       navigate("/");
-    } catch (e: any) {
-      toast({ variant: "destructive", title: "فشل إنشاء الحساب", description: e.message });
+    } catch (e: unknown) {
+      toast({ variant: "destructive", title: "فشل إنشاء الحساب", description: e instanceof Error ? e.message : "حدث خطأ غير متوقع" });
     } finally { setIsLoading(false); }
   };
 
@@ -196,7 +196,7 @@ export default function SignupPage() {
   );
 }
 
-function InputField({ icon, value, onChange, placeholder, type = "text" }: any) {
+function InputField({ icon, value, onChange, placeholder, type = "text" }: { icon: React.ReactNode; value: string; onChange: (value: string) => void; placeholder: string; type?: string }) {
   return (
     <div className="relative">
       <div className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground">{icon}</div>

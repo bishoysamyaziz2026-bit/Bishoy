@@ -17,6 +17,7 @@ import PricingPage from "./pages/Pricing";
 import AboutPage from "./pages/About";
 import AdminPage from "./pages/Admin";
 import SupremeOfficePage from "./pages/SupremeOffice";
+import SystemControlPage from "./pages/SystemControl";
 
 const queryClient = new QueryClient();
 
@@ -40,6 +41,7 @@ const App = () => (
               <Route path="/about" element={<AboutPage />} />
               <Route path="/admin" element={<AdminPage />} />
               <Route path="/supreme-office" element={<SupremeOfficePage />} />
+              <Route path="/system-control" element={<SystemControlPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

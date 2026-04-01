@@ -103,8 +103,8 @@ export default function Dashboard() {
   );
 }
 
-function ActionCard({ href, icon, title, color }: any) {
-  const colors: any = {
+function ActionCard({ href, icon, title, color }: { href: string; icon: React.ReactNode; title: string; color: string }) {
+  const colors: Record<string, string> = {
     primary: "text-primary bg-primary/8 border-primary/15",
     violet: "text-violet-400 bg-violet-500/8 border-violet-500/15",
     amber: "text-amber-400 bg-amber-500/8 border-amber-500/15",
