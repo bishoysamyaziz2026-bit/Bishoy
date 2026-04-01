@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 import { getBalance } from '@/lib/roles';
 
 const container = { hidden: {}, show: { transition: { staggerChildren: 0.08 } } };
-const item = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] } } };
+const item = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" as const } } };
 
 const NEWS = [
   { title: "تعديلات قانون الإيجار الجديد 2026", tag: "عقاري", time: "منذ ساعتين" },
