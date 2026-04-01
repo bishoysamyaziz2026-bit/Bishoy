@@ -1,45 +1,49 @@
 import { motion } from "framer-motion";
-import { Zap, ShieldCheck, Crown, CheckCircle2 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Zap, Crown, CheckCircle2 } from "lucide-react";
+
+const item = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0, transition: { duration: 0.4 } } };
+const container = { hidden: {}, show: { transition: { staggerChildren: 0.1 } } };
 
 const PLANS = [
-  { id: "starter", name: "المواطن", price: 50, features: ["5 استشارات AI", "وثيقة واحدة مجانية", "دعم أساسي"], color: "text-blue-500", border: "border-blue-500/20" },
-  { id: "pro", name: "VIP السيادي", price: 200, features: ["استشارات AI غير محدودة", "10 وثائق مجانية", "أولوية في مجلس الخبراء", "تقرير مالي PDF"], color: "text-primary", border: "border-primary/20", featured: true },
-  { id: "enterprise", name: "المؤسسة", price: 500, features: ["كل مزايا VIP", "API خاص", "مدير حساب مخصص", "دعم 24/7"], color: "text-violet-500", border: "border-violet-500/20" },
+  { id: "starter", name: "الأساسي", price: 50, features: ["5 استشارات AI", "وثيقة مجانية", "دعم أساسي"], color: "primary", featured: false },
+  { id: "pro", name: "VIP", price: 200, features: ["استشارات غير محدودة", "10 وثائق مجانية", "أولوية الخبراء", "تقرير PDF"], color: "primary", featured: true },
+  { id: "enterprise", name: "المؤسسات", price: 500, features: ["كل مزايا VIP", "API خاص", "مدير حساب", "دعم 24/7"], color: "violet", featured: false },
 ];
 
 export default function PricingPage() {
   return (
-    <div className="min-h-screen bg-background text-foreground p-8 lg:p-20 font-sans" dir="rtl">
-      <div className="max-w-6xl mx-auto space-y-20">
-        <header className="text-center space-y-6">
-          <div className="sovereign-badge mx-auto"><Crown className="h-3 w-3" /> باقات الخدمة السيادية</div>
-          <h1 className="text-6xl md:text-8xl font-black tracking-tighter">اختر <span className="text-gradient">باقتك</span></h1>
-          <p className="text-xl text-muted-foreground font-bold max-w-2xl mx-auto">كل باقة مصممة لتمنحك أقصى قيمة قانونية بأقل تكلفة.</p>
-        </header>
-        <div className="grid md:grid-cols-3 gap-10">
+    <div className="min-h-screen bg-background text-foreground p-6 pb-20" dir="rtl">
+      <motion.div variants={container} initial="hidden" animate="show" className="max-w-lg mx-auto space-y-8">
+        <motion.header variants={item} className="text-center space-y-3">
+          <div className="sovereign-badge mx-auto"><Crown className="h-3 w-3" /> الباقات</div>
+          <h1 className="text-3xl font-black tracking-tighter">اختر <span className="text-gradient">باقتك</span></h1>
+          <p className="text-sm text-muted-foreground font-medium">كل باقة مصممة لتمنحك أقصى قيمة قانونية.</p>
+        </motion.header>
+
+        <div className="space-y-4">
           {PLANS.map((plan) => (
-            <motion.div key={plan.id} whileHover={{ y: -10 }}
-              className={`glass-cosmic border ${plan.border} rounded-[4rem] p-12 space-y-10 ${plan.featured ? 'ring-2 ring-primary/30 shadow-3xl scale-105' : 'shadow-2xl'}`}>
-              <div className="space-y-4">
-                <h3 className={`text-3xl font-black ${plan.color}`}>{plan.name}</h3>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-6xl font-black text-foreground">{plan.price}</span>
-                  <span className="text-muted-foreground font-bold">EGP / شهرياً</span>
-                </div>
+            <motion.div key={plan.id} variants={item}
+              className={`glass-panel border rounded-3xl p-6 space-y-5 btn-hover ${plan.featured ? 'border-primary/30 neon-border' : 'border-border'}`}>
+              <div className="flex items-center justify-between">
+                <h3 className={`text-lg font-black ${plan.featured ? 'text-primary' : 'text-foreground'}`}>{plan.name}</h3>
+                {plan.featured && <span className="text-[9px] font-bold text-primary bg-primary/10 px-2 py-1 rounded-md uppercase">الأكثر شعبية</span>}
               </div>
-              <div className="space-y-4">
+              <div className="flex items-baseline gap-1">
+                <span className="text-4xl font-black text-foreground">{plan.price}</span>
+                <span className="text-sm text-muted-foreground font-medium">EGP / شهرياً</span>
+              </div>
+              <div className="space-y-2.5">
                 {plan.features.map((f) => (
-                  <div key={f} className="flex items-center gap-3"><CheckCircle2 size={16} className={plan.color} /><span className="text-muted-foreground font-bold">{f}</span></div>
+                  <div key={f} className="flex items-center gap-2"><CheckCircle2 size={14} className="text-primary flex-shrink-0" /><span className="text-xs text-muted-foreground font-medium">{f}</span></div>
                 ))}
               </div>
-              <button className={`w-full h-20 rounded-[2.5rem] font-black text-xl flex items-center justify-center gap-4 transition-all hover:scale-105 ${plan.featured ? 'bg-primary text-primary-foreground shadow-3xl' : 'bg-accent text-foreground border border-border'}`}>
-                <Zap size={24} /> اشتراك الآن
+              <button className={`w-full h-12 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 transition-all btn-hover ${plan.featured ? 'bg-primary text-primary-foreground shadow-neon' : 'bg-accent text-foreground border border-border hover:bg-accent/80'}`}>
+                <Zap size={16} /> اشتراك
               </button>
             </motion.div>
           ))}
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }

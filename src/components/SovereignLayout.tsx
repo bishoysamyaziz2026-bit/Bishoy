@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { MessageSquare, User, ArrowUp, Menu, Wallet, Crown, Loader2 } from 'lucide-react';
+import { MessageSquare, User, Scale, Menu, Wallet, Crown, Loader2, Briefcase, Users } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { useUser } from '@/firebase/provider';
 import SovereignSidebar from '@/components/SovereignSidebar';
@@ -24,49 +23,54 @@ export default function SovereignLayout({ children, activeId }: SovereignLayoutP
   const balance = getBalance(profile);
 
   return (
-    <div className="fixed inset-0 bg-background text-foreground font-sans overflow-hidden flex flex-col matte-black" dir="rtl">
-      <div className="p-8 md:p-12 flex justify-between items-center relative z-50 w-full">
-        <button onClick={() => setSidebarOpen(true)} className="w-20 h-20 glass-cosmic rounded-[2.5rem] flex items-center justify-center border border-border hover:bg-accent transition-all shadow-3xl">
-          <Menu size={36} className="text-muted-foreground" />
+    <div className="fixed inset-0 bg-background text-foreground overflow-hidden flex flex-col matte-black" dir="rtl">
+      {/* Top Bar */}
+      <div className="px-4 py-3 flex justify-between items-center relative z-50 w-full">
+        <button onClick={() => setSidebarOpen(true)} className="w-11 h-11 glass-panel rounded-xl flex items-center justify-center border border-border hover:bg-accent transition-all">
+          <Menu size={18} className="text-muted-foreground" />
         </button>
         <Link to="/pricing">
-          <div className="glass-cosmic border border-border px-12 py-6 rounded-[3.5rem] flex items-center gap-10 shadow-3xl hover:bg-accent transition-all group">
-            {sovereign.isOwner ? <Crown size={40} className="text-primary animate-pulse" /> : <Wallet size={40} className="text-muted-foreground" />}
-            <div className="flex flex-col items-end">
-              <span className={`text-6xl font-black tabular-nums leading-none ${sovereign.isOwner ? 'text-primary' : 'text-foreground'}`}>{balance}</span>
-              <span className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.5em] mt-2">{sovereign.isOwner ? 'SUPREME AUTHORITY' : 'SOVEREIGN UNITS'}</span>
+          <div className="glass-panel border border-border px-4 py-2 rounded-2xl flex items-center gap-3 btn-hover">
+            {sovereign.isOwner ? <Crown size={16} className="text-primary animate-pulse" /> : <Wallet size={16} className="text-muted-foreground" />}
+            <div className="flex items-baseline gap-1.5">
+              <span className={`text-lg font-black tabular-nums ${sovereign.isOwner ? 'text-primary neon-text' : 'text-foreground'}`}>{balance}</span>
+              <span className="text-[8px] font-bold text-muted-foreground uppercase tracking-wider">{sovereign.isOwner ? 'ADMIN' : 'EGP'}</span>
             </div>
           </div>
         </Link>
       </div>
 
-      <main className="flex-1 overflow-y-auto scrollbar-none pb-40">
+      {/* Main Content */}
+      <main className="flex-1 overflow-y-auto scrollbar-none pb-24">
         <div className="w-full h-full">
           {isUserLoading ? (
-            <div className="h-full flex items-center justify-center opacity-20"><Loader2 className="animate-spin text-primary h-20 w-20" /></div>
+            <div className="h-full flex items-center justify-center opacity-20"><Loader2 className="animate-spin text-primary h-10 w-10" /></div>
           ) : children}
         </div>
       </main>
 
       <SovereignSidebar isOpen={isSidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-      <div className="fixed bottom-12 inset-x-0 z-50 px-10">
-        <div className="max-w-3xl mx-auto glass-cosmic rounded-[5rem] p-5 flex items-center justify-between border border-border shadow-3xl">
-          <DockItem href="/bot" active={location.pathname === '/bot'} icon={<MessageSquare size={44} />} />
-          <DockItem href="/dashboard" active={location.pathname === '/dashboard'} icon={<User size={44} />} />
-          {sovereign.isOwner && <DockItem href="/admin" active={location.pathname === '/admin'} icon={<Crown size={44} />} />}
-          <DockItem href="/" active={location.pathname === '/'} icon={<ArrowUp size={44} />} />
+      {/* Floating Dock - iOS Style */}
+      <div className="fixed bottom-5 inset-x-0 z-50 px-4">
+        <div className="max-w-sm mx-auto floating-dock rounded-[2rem] p-2 flex items-center justify-around">
+          <DockItem href="/" active={location.pathname === '/'} icon={<Scale size={18} />} label="الرئيسية" />
+          <DockItem href="/bot" active={location.pathname === '/bot'} icon={<MessageSquare size={18} />} label="البوت" />
+          <DockItem href="/dashboard" active={location.pathname === '/dashboard'} icon={<Briefcase size={18} />} label="حسابي" />
+          <DockItem href="/consultants" active={location.pathname === '/consultants'} icon={<Users size={18} />} label="الخبراء" />
+          {sovereign.isOwner && <DockItem href="/admin" active={location.pathname === '/admin'} icon={<Crown size={18} />} label="الإدارة" />}
         </div>
       </div>
     </div>
   );
 }
 
-function DockItem({ href, active, icon }: any) {
+function DockItem({ href, active, icon, label }: { href: string; active: boolean; icon: React.ReactNode; label: string }) {
   return (
     <Link to={href} className="flex-1">
-      <button className={`w-full h-28 rounded-[4rem] flex items-center justify-center transition-all duration-500 ${active ? 'bg-primary text-primary-foreground shadow-3xl scale-110' : 'text-muted-foreground hover:text-foreground'}`}>
+      <button className={`w-full py-2.5 rounded-2xl flex flex-col items-center gap-1 transition-all duration-300 ${active ? 'bg-primary/15 text-primary shadow-neon' : 'text-muted-foreground hover:text-foreground'}`}>
         {icon}
+        <span className="text-[9px] font-bold">{label}</span>
       </button>
     </Link>
   );

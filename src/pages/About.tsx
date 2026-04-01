@@ -1,31 +1,36 @@
 import { Scale, ShieldCheck, Users, Zap } from "lucide-react";
 import { motion } from "framer-motion";
 
+const item = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0, transition: { duration: 0.4 } } };
+const container = { hidden: {}, show: { transition: { staggerChildren: 0.1 } } };
+
 export default function AboutPage() {
   return (
-    <div className="min-h-screen bg-background text-foreground p-8 lg:p-20 font-sans" dir="rtl">
-      <div className="max-w-4xl mx-auto space-y-20 text-center">
-        <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
-          <div className="w-28 h-28 bg-primary/10 rounded-[3rem] flex items-center justify-center mx-auto text-primary shadow-3xl float-sovereign border border-primary/20">
-            <Scale size={56} strokeWidth={1.5} />
+    <div className="min-h-screen bg-background text-foreground p-6 pb-20" dir="rtl">
+      <motion.div variants={container} initial="hidden" animate="show" className="max-w-lg mx-auto space-y-10 text-center">
+        <motion.div variants={item} className="space-y-6">
+          <div className="w-20 h-20 bg-primary/10 rounded-3xl flex items-center justify-center mx-auto text-primary neon-glow border border-primary/20 float-gentle">
+            <Scale size={36} strokeWidth={1.5} />
           </div>
-          <h1 className="text-6xl md:text-8xl font-black tracking-tighter">المستشار <span className="text-primary">AI</span></h1>
-          <p className="text-2xl text-muted-foreground font-bold max-w-2xl mx-auto leading-relaxed">منصة الاستشارات القانونية السيادية المدعومة بالذكاء الاصطناعي. نسعى لتقديم العدالة الرقمية للجميع.</p>
+          <h1 className="text-4xl font-black tracking-tighter">المستشار <span className="text-primary">AI</span></h1>
+          <p className="text-base text-muted-foreground font-medium leading-relaxed max-w-md mx-auto">منصة الاستشارات القانونية الذكية المدعومة بالذكاء الاصطناعي. نسعى لتقديم العدالة الرقمية للجميع.</p>
         </motion.div>
-        <div className="grid md:grid-cols-3 gap-10">
+        <div className="grid gap-4">
           {[
-            { icon: <ShieldCheck size={40} />, title: "حماية سيادية", desc: "تشفير شامل لجميع البيانات والمحادثات القانونية." },
-            { icon: <Users size={40} />, title: "مجلس الخبراء", desc: "نخبة من المحامين والمستشارين القانونيين المعتمدين." },
-            { icon: <Zap size={40} />, title: "ذكاء اصطناعي", desc: "تحليل قانوني فوري مدعوم بأحدث تقنيات الـ AI." },
-          ].map((item) => (
-            <motion.div key={item.title} whileHover={{ y: -5 }} className="glass-cosmic border border-border rounded-[3rem] p-10 space-y-6">
-              <div className="text-primary">{item.icon}</div>
-              <h3 className="text-2xl font-black text-foreground">{item.title}</h3>
-              <p className="text-muted-foreground font-bold">{item.desc}</p>
+            { icon: <ShieldCheck size={22} />, title: "حماية متقدمة", desc: "تشفير شامل لجميع البيانات والمحادثات." },
+            { icon: <Users size={22} />, title: "خبراء معتمدون", desc: "نخبة من المحامين والمستشارين القانونيين." },
+            { icon: <Zap size={22} />, title: "ذكاء اصطناعي", desc: "تحليل قانوني فوري بأحدث تقنيات AI." },
+          ].map((feat) => (
+            <motion.div key={feat.title} variants={item} className="glass-panel border border-border rounded-2xl p-5 flex items-center gap-4 text-right btn-hover">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20 flex-shrink-0">{feat.icon}</div>
+              <div>
+                <h3 className="text-sm font-bold text-foreground">{feat.title}</h3>
+                <p className="text-xs text-muted-foreground font-medium mt-0.5">{feat.desc}</p>
+              </div>
             </motion.div>
           ))}
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }
