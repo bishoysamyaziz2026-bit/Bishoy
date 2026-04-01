@@ -13,7 +13,17 @@ interface Message {
   id: string;
   role: string;
   text: string;
+  timestamp?: string;
 }
+
+const LEGAL_EXPERT_PROMPT = `أنت "المستشار AI"، خبير قانوني مصري كبير متخصص في القانون المصري والقانون الدولي. لديك خبرة 25 سنة في العمل القانوني.
+- تقدم استشارات قانونية دقيقة ومفصلة
+- تشرح المواد القانونية والقوانين بوضوح
+- تساعد في تحليل الحالات القانونية المعقدة
+- تقدم حلولاً قانونية عملية
+- تستخدم اللغة العربية الفصحى مع تبسيط المفاهيم
+- تحافظ على سرية المعلومات وتؤكد أهمية التشاور مع محامٍ مرخص
+تذكر: أنت مستشار قانوني ذكي وليس محاميًا، فقدم المساعدة والتوجيه الأفضل.`;
 
 export default function BotPage() {
   const { user } = useUser();
@@ -23,6 +33,7 @@ export default function BotPage() {
   const [isTyping, setIsTyping] = useState(false);
   const [isCapsuleOpen, setIsCapsuleOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [localMessages, setLocalMessages] = useState<Message[]>([]);
 
   const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
   const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
@@ -35,15 +46,94 @@ export default function BotPage() {
 
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-  }, [messages, isTyping]);
+  }, [messages, isTyping, localMessages]);
+
+  const handleSend = async () => {
+    if (!inputText.trim() || isTyping || !user) return;
+
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      role: "user",
+      text: inputText,
+      timestamp: new Date().toISOString(),
+    };
+
+    setInputText("");
+    setIsTyping(true);
+    setLocalMessages([...localMessages, userMessage]);
+
+    try {
+      // Save user message to Firestore
+      const docRef = await addDoc(
+        collection(db, "users", user.uid, "chatHistory"),
+        {
+          role: "user",
+          text: inputText,
+          timestamp: serverTimestamp(),
+        }
+      );
+
+      // Prepare conversation history
+      const conversationHistory = [
+        { role: "user", parts: [{ text: LEGAL_EXPERT_PROMPT }] },
+        ...(messages || []).map((m: Message) => ({
+          role: m.role === "user" ? "user" : "model",
+          parts: [{ text: m.text }],
+        })),
+        { role: "user", parts: [{ text: inputText }] },
+      ];
+
+      // Stream response from Gemini
+      let fullResponse = "";
+      const result = await model.generateContentStream({
+        contents: conversationHistory,
+      });
+
+      for await (const chunk of result.stream) {
+        const chunkText = chunk.text();
+        fullResponse += chunkText;
+        setLocalMessages((prev) => {
+          const updated = [...prev];
+          if (updated[updated.length - 1]?.role === "assistant") {
+            updated[updated.length - 1].text = fullResponse;
+          } else {
+            updated.push({
+              id: `stream-${Date.now()}`,
+              role: "assistant",
+              text: fullResponse,
+              timestamp: new Date().toISOString(),
+            });
+          }
+          return updated;
+        });
+      }
+
+      // Save assistant message to Firestore
+      await addDoc(
+        collection(db, "users", user.uid, "chatHistory"),
+        {
+          role: "assistant",
+          text: fullResponse,
+          timestamp: serverTimestamp(),
+        }
+      );
+    } catch (error) {
+      console.error("خطأ في معالجة الرسالة:", error);
+      toast({ variant: "destructive", title: "حدث خطأ، حاول مرة أخرى" });
+      setLocalMessages((prev) => prev.filter((m) => m.id !== userMessage.id));
+    } finally {
+      setIsTyping(false);
+    }
+  };
 
   const handleSaveCase = async () => {
-    if (!messages || messages.length === 0 || !user) return;
+    if ((!messages || messages.length === 0) && localMessages.length === 0) return;
+    if (!user) return;
     try {
       const caseData = {
         userId: user.uid,
         title: `قضية ${new Date().toLocaleDateString('ar')}`,
-        messages: messages,
+        messages: [...(messages || []), ...localMessages],
         createdAt: new Date().toISOString(),
       };
       await supabaseClient.from('cases').insert(caseData);
@@ -58,7 +148,7 @@ export default function BotPage() {
       <div className="flex flex-col h-full relative w-full px-4">
         <div ref={scrollRef} className="flex-1 overflow-y-auto space-y-4 pb-44 pt-4 scrollbar-none">
           <AnimatePresence mode="popLayout">
-            {messages?.length === 0 && (
+            {(!messages || messages.length === 0) && localMessages.length === 0 && (
               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center py-20 space-y-6">
                 <div className="w-20 h-20 bg-primary/10 rounded-3xl mx-auto flex items-center justify-center border border-primary/20 float-gentle neon-glow">
                   <Scale size={36} className="text-primary" />
@@ -69,7 +159,7 @@ export default function BotPage() {
                 </div>
               </motion.div>
             )}
-            {messages?.map((m: Message) => (
+            {(messages || []).concat(localMessages).map((m: Message) => (
               <motion.div key={m.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
                 className={`p-4 rounded-2xl max-w-[85%] text-sm font-medium leading-relaxed ${
                   m.role === 'user' ? 'bg-primary text-primary-foreground mr-auto rounded-br-md' : 'glass-panel text-foreground border border-border ml-auto rounded-bl-md'
@@ -107,8 +197,8 @@ export default function BotPage() {
               </button>
               <input value={inputText} onChange={(e) => setInputText(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                 placeholder="اكتب استفسارك القانوني..." className="flex-1 bg-transparent border-none outline-none px-2 text-sm font-medium text-foreground placeholder:text-muted-foreground/40 text-right" />
-              <button onClick={handleSaveCase} disabled={!messages || messages.length === 0}
-                className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 ${messages && messages.length > 0 ? 'bg-amber-500/15 text-amber-400 hover:bg-amber-500/25' : 'bg-accent text-muted-foreground opacity-50'}`}>
+              <button onClick={handleSaveCase} disabled={(!messages || messages.length === 0) && localMessages.length === 0}
+                className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 ${(messages && messages.length > 0) || localMessages.length > 0 ? 'bg-amber-500/15 text-amber-400 hover:bg-amber-500/25' : 'bg-accent text-muted-foreground opacity-50'}`}>
                 <Save size={16} />
               </button>
               <button onClick={handleSend} disabled={!inputText.trim() || isTyping}
