@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, Loader2, Sparkles, Plus, Camera, FileText, X, Scale, Users, Save } from "lucide-react";
+import { Send, Loader2, Sparkles, Plus, Camera, FileText, X, Scale, Users, Save, Download, Upload, File } from "lucide-react";
 import SovereignLayout from "@/components/SovereignLayout";
 import { useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase/provider";
 import { useToast } from "@/hooks/use-toast";
@@ -8,12 +8,22 @@ import { collection, query, orderBy, limit, addDoc, serverTimestamp } from "fire
 import { Link } from "react-router-dom";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { supabaseClient } from "@/lib/supabaseClient";
+import { logActivity } from "@/lib/caseUtils";
+import * as pdfjsLib from 'pdfjs-dist';
 
 interface Message {
   id: string;
   role: string;
   text: string;
   timestamp?: string;
+  documentName?: string;
+}
+
+interface DocumentAnalysis {
+  id: string;
+  fileName: string;
+  extractedText: string;
+  uploadedAt: string;
 }
 
 const LEGAL_EXPERT_PROMPT = `أنت "المستشار AI"، خبير قانوني مصري كبير متخصص في القانون المصري والقانون الدولي. لديك خبرة 25 سنة في العمل القانوني.
@@ -33,7 +43,10 @@ export default function BotPage() {
   const [isTyping, setIsTyping] = useState(false);
   const [isCapsuleOpen, setIsCapsuleOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [localMessages, setLocalMessages] = useState<Message[]>([]);
+  const [isUploadingDocument, setIsUploadingDocument] = useState(false);
+  const [uploadedDocuments, setUploadedDocuments] = useState<DocumentAnalysis[]>([]);
 
   const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
   const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
@@ -47,6 +60,93 @@ export default function BotPage() {
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, isTyping, localMessages]);
+
+  // Document extraction from PDF/Image
+  const extractTextFromDocument = async (file: File): Promise<string> => {
+    try {
+      if (file.type.includes("pdf")) {
+        // PDF extraction using FileReader
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
+        let extractedText = "";
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const text = await page.getTextContent();
+          extractedText += text.items.map((item: any) => item.str || "").join(" ");
+        }
+        return extractedText;
+      } else if (file.type.includes("image")) {
+        // For images, read as base64 and use Gemini's vision capability
+        return await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = (e) => resolve((e.target?.result as string) || "");
+          reader.readAsDataURL(file);
+        });
+      }
+      return "";
+    } catch (error) {
+      console.error("خطأ في استخراج النص:", error);
+      throw error;
+    }
+  };
+
+  // Handle document upload and analysis
+  const handleDocumentUpload = async (file: File) => {
+    if (!file || !user) return;
+
+    setIsUploadingDocument(true);
+    try {
+      const extractedText = await extractTextFromDocument(file);
+      
+      // Add document to uploaded list
+      const docAnalysis: DocumentAnalysis = {
+        id: Date.now().toString(),
+        fileName: file.name,
+        extractedText: extractedText.substring(0, 500), // Store first 500 chars
+        uploadedAt: new Date().toISOString(),
+      };
+      setUploadedDocuments([...uploadedDocuments, docAnalysis]);
+
+      // Create analysis message
+      const analysisPrompt = `تم تحميل مستند: "${file.name}"\n\nالمحتوى:\n${extractedText.substring(0, 1000)}...\n\nهل تريد تحليل هذا المستند؟`;
+      
+      const userMessage: Message = {
+        id: Date.now().toString(),
+        role: "user",
+        text: analysisPrompt,
+        documentName: file.name,
+        timestamp: new Date().toISOString(),
+      };
+
+      setLocalMessages([...localMessages, userMessage]);
+
+      // Save to Firestore
+      await addDoc(
+        collection(db, "users", user.uid, "chatHistory"),
+        {
+          role: "user",
+          text: analysisPrompt,
+          documentName: file.name,
+          timestamp: serverTimestamp(),
+        }
+      );
+
+      // Log activity
+      await logActivity(
+        user.uid,
+        "رفع_مستند",
+        `تم رفع مستند: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`
+      );
+
+      toast({ title: "تم تحميل المستند", description: `تم تحليل ${file.name} بنجاح` });
+    } catch (error) {
+      console.error("خطأ في معالجة المستند:", error);
+      toast({ variant: "destructive", title: "فشل تحميل المستند", description: "حاول مجدداً" });
+    } finally {
+      setIsUploadingDocument(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
 
   const handleSend = async () => {
     if (!inputText.trim() || isTyping || !user) return;
@@ -130,16 +230,102 @@ export default function BotPage() {
     if ((!messages || messages.length === 0) && localMessages.length === 0) return;
     if (!user) return;
     try {
+      const allMessages = [...(messages || []), ...localMessages];
       const caseData = {
         userId: user.uid,
+        case_number: `CASE-${Date.now()}`,
+        client_name: user.displayName || user.email || "عميل",
+        opponent: "غير محدد",
+        next_hearing_date: null,
         title: `قضية ${new Date().toLocaleDateString('ar')}`,
-        messages: [...(messages || []), ...localMessages],
+        messages: allMessages,
         createdAt: new Date().toISOString(),
       };
-      await supabaseClient.from('cases').insert(caseData);
-      toast({ title: "تم حفظ القضية بنجاح" });
+      
+      const { data, error } = await supabaseClient.from('cases').insert(caseData).select();
+      
+      if (error) throw error;
+
+      // Log activity
+      await logActivity(
+        user.uid,
+        "حفظ_قضية",
+        `تم حفظ قضية جديدة - ${caseData.case_number} بـ ${allMessages.length} رسالة`
+      );
+
+      toast({ title: "تم حفظ القضية بنجاح", description: `رقم القضية: ${caseData.case_number}` });
     } catch (error) {
+      console.error("خطأ في حفظ القضية:", error);
       toast({ variant: "destructive", title: "فشل حفظ القضية" });
+    }
+  };
+
+  // Generate and download PDF
+  const generatePDF = async () => {
+    if (!user) return;
+    try {
+      const allMessages = [...(messages || []), ...localMessages];
+      if (allMessages.length === 0) {
+        toast({ title: "لا توجد رسائل", description: "ابدأ محادثة أولاً" });
+        return;
+      }
+
+      // Simple HTML to PDF generation
+      const htmlContent = `
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <title>استشارة قانونية</title>
+  <style>
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 20px; direction: rtl; }
+    h1 { color: #1a1a2e; border-bottom: 3px solid #16a34a; padding-bottom: 10px; }
+    h3 { color: #16a34a; margin-top: 20px; }
+    .message { margin: 15px 0; padding: 12px; border-radius: 8px; }
+    .user-msg { background: #dcfce7; border-right: 4px solid #16a34a; }
+    .assistant-msg { background: #f1f5f9; border-right: 4px solid #64748b; }
+    .metadata { color: #666; font-size: 12px; margin-top: 5px; }
+    .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; text-align: center; color: #999; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <h1>📋 استشارة قانونية - المستشار AI</h1>
+  <p><strong>التاريخ:</strong> ${new Date().toLocaleDateString('ar')}</p>
+  <p><strong>الوقت:</strong> ${new Date().toLocaleTimeString('ar')}</p>
+  
+  <h3>محتوى الاستشارة:</h3>
+  ${allMessages
+    .map((msg: Message) => `
+    <div class="message ${msg.role === 'user' ? 'user-msg' : 'assistant-msg'}">
+      <strong>${msg.role === 'user' ? 'أنت' : 'المستشار AI'}:</strong>
+      <p>${msg.text}</p>
+      ${msg.documentName ? `<div class="metadata">📄 مستند: ${msg.documentName}</div>` : ''}
+      ${msg.timestamp ? `<div class="metadata">⏰ ${new Date(msg.timestamp).toLocaleString('ar')}</div>` : ''}
+    </div>
+  `)
+    .join('')}
+
+  <div class="footer">
+    <p>⚖️ هذه الاستشارة معلومات قانونية فقط وليست بديل عن تمثيل قانوني مهني.</p>
+    <p>تم إنشاؤها بواسطة منصة المستشار AI</p>
+  </div>
+</body>
+</html>
+      `;
+
+      // Create blob and download
+      const element = document.createElement('a');
+      const file = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+      element.href = URL.createObjectURL(file);
+      element.download = `استشارة-قانونية-${new Date().toISOString().split('T')[0]}.html`;
+      document.body.appendChild(element);
+      element.click();
+      document.body.removeChild(element);
+
+      toast({ title: "تم التحميل", description: "تم تحميل الاستشارة بنجاح" });
+    } catch (error) {
+      console.error("خطأ في تحميل الملف:", error);
+      toast({ variant: "destructive", title: "فشل التحميل" });
     }
   };
 
@@ -183,13 +369,32 @@ export default function BotPage() {
             <AnimatePresence>
               {isCapsuleOpen && (
                 <motion.div initial={{ opacity: 0, y: 20, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 20, scale: 0.95 }}
-                  className="absolute bottom-full mb-3 inset-x-0 glass-panel rounded-2xl p-3 grid grid-cols-3 gap-2 border border-border shadow-3xl">
+                  className="absolute bottom-full mb-3 inset-x-0 glass-panel rounded-2xl p-3 grid grid-cols-4 gap-2 border border-border shadow-3xl">
                   <CapsuleTool icon={<Camera size={20} />} label="Vision Scan" href="/bot" color="primary" />
                   <CapsuleTool icon={<FileText size={20} />} label="Legal Vault" href="/templates" color="amber" />
                   <CapsuleTool icon={<Users size={20} />} label="Live Expert" href="/consultants" color="violet" />
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploadingDocument}
+                    className="w-full flex flex-col items-center gap-2 p-4 rounded-xl border border-border bg-accent/50 transition-all hover:bg-accent/75 text-rose-400 hover:text-rose-500"
+                  >
+                    <Upload size={20} />
+                    <span className="text-[9px] font-bold uppercase tracking-widest opacity-60">Upload Doc</span>
+                  </button>
                 </motion.div>
               )}
             </AnimatePresence>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".pdf,.png,.jpg,.jpeg,.gif"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) handleDocumentUpload(file);
+              }}
+              disabled={isUploadingDocument}
+            />
             <div className="glass-panel rounded-2xl p-2 flex items-center gap-2 border border-border shadow-3xl">
               <button onClick={() => setIsCapsuleOpen(!isCapsuleOpen)}
                 className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 ${isCapsuleOpen ? 'bg-primary/15 text-primary rotate-45' : 'bg-accent text-muted-foreground hover:text-foreground'}`}>
@@ -197,6 +402,14 @@ export default function BotPage() {
               </button>
               <input value={inputText} onChange={(e) => setInputText(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                 placeholder="اكتب استفسارك القانوني..." className="flex-1 bg-transparent border-none outline-none px-2 text-sm font-medium text-foreground placeholder:text-muted-foreground/40 text-right" />
+              <button
+                onClick={generatePDF}
+                disabled={(!messages || messages.length === 0) && localMessages.length === 0}
+                className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 ${(messages && messages.length > 0) || localMessages.length > 0 ? 'bg-violet-500/15 text-violet-400 hover:bg-violet-500/25' : 'bg-accent text-muted-foreground opacity-50'}`}
+                title="تحميل الاستشارة كـ PDF"
+              >
+                <Download size={16} />
+              </button>
               <button onClick={handleSaveCase} disabled={(!messages || messages.length === 0) && localMessages.length === 0}
                 className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 ${(messages && messages.length > 0) || localMessages.length > 0 ? 'bg-amber-500/15 text-amber-400 hover:bg-amber-500/25' : 'bg-accent text-muted-foreground opacity-50'}`}>
                 <Save size={16} />

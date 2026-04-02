@@ -3,6 +3,7 @@ import { Users, FileText, Database, LogOut, Lock, Activity, Settings, BarChart3,
 import SovereignLayout from "@/components/SovereignLayout";
 import { useToast } from "@/hooks/use-toast";
 import { supabaseClient } from "@/lib/supabaseClient";
+import { getActivityLogs, getUserCases } from "@/lib/caseUtils";
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -79,14 +80,8 @@ export default function SystemControlPage() {
   // Load activity logs
   const loadActivityLogs = async () => {
     try {
-      const { data, error } = await supabaseClient
-        .from("activity_logs")
-        .select("*")
-        .order("timestamp", { ascending: false })
-        .limit(10);
-
-      if (error) throw error;
-      setActivityLogs(data || []);
+      const logs = await getActivityLogs(user?.email);
+      setActivityLogs(logs as any);
     } catch (error) {
       console.error("خطأ في تحميل السجلات:", error);
       toast({ variant: "destructive", title: "فشل تحميل السجلات" });
@@ -203,13 +198,14 @@ export default function SystemControlPage() {
               </DialogHeader>
               <div className="space-y-2 max-h-96 overflow-y-auto">
                 {activityLogs.length > 0 ? (
-                  activityLogs.map((log) => (
+                  activityLogs.map((log: any) => (
                     <div key={log.id} className="p-3 rounded-lg bg-accent/50 border border-border/30 text-sm">
                       <div className="flex justify-between items-start">
                         <span className="font-medium text-foreground">{log.action}</span>
                         <span className="text-xs text-muted-foreground">{new Date(log.timestamp).toLocaleString('ar')}</span>
                       </div>
                       <p className="text-xs text-muted-foreground mt-1">{log.details}</p>
+                      <p className="text-xs text-muted-foreground/60 mt-1">👤 {log.userId}</p>
                     </div>
                   ))
                 ) : (
