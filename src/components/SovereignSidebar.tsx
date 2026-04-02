@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, User, CreditCard, LogOut, ShieldCheck, LayoutDashboard, Sparkles, FileText, Scale, Crown, Info } from 'lucide-react';
+import { X, User, CreditCard, LogOut, ShieldCheck, LayoutDashboard, Sparkles, FileText, Scale, Crown, Info, Users, BookOpen, Wallet } from 'lucide-react';
 import { useUser } from '@/firebase/provider';
 import { checkSovereignStatus, getBalance } from '@/lib/roles';
 import { Link } from 'react-router-dom';
@@ -54,6 +54,10 @@ export default function SovereignSidebar({ isOpen, onClose }: SovereignSidebarPr
               <SidebarLink to="/" icon={<Scale size={16} />} label="الرئيسية" onClose={onClose} />
               <SidebarLink to="/dashboard" icon={<LayoutDashboard size={16} />} label="لوحة التحكم" onClose={onClose} />
               <SidebarLink to="/bot" icon={<Sparkles size={16} />} label="المستشار AI" onClose={onClose} />
+              <SidebarLink to="/council" icon={<Users size={16} />} label="مجلس الخبراء" onClose={onClose} />
+              <SidebarLink to="/video-session" icon={<Video size={16} />} label="جلسات الفيديو" onClose={onClose} />
+              <SidebarLink to="/library" icon={<BookOpen size={16} />} label="المكتبة الرقمية" onClose={onClose} />
+              <SidebarLink to="/wallet" icon={<Wallet size={16} />} label="محفظتي" onClose={onClose} />
               <SidebarLink to="/consultants" icon={<User size={16} />} label="الخبراء" onClose={onClose} />
               <SidebarLink to="/templates" icon={<FileText size={16} />} label="الوثائق" onClose={onClose} />
               {!sovereign.isOwner && (

@@ -1,14 +1,17 @@
 import { useState, useEffect } from "react";
-import { Users, FileText, Database, LogOut, Lock, Activity, Settings, BarChart3, Loader2 } from "lucide-react";
+import { Users, FileText, Database, LogOut, Lock, Activity, Settings, BarChart3, Loader2, Trash2, Award, ToggleRight } from "lucide-react";
 import SovereignLayout from "@/components/SovereignLayout";
 import { useToast } from "@/hooks/use-toast";
 import { supabaseClient } from "@/lib/supabaseClient";
 import { getActivityLogs, getUserCases } from "@/lib/caseUtils";
+import { getUserById, banUser, updateUserBalance, toggleUserBadge, toggleUserService, logAdminAction } from "@/lib/advancedUtils";
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { motion } from "framer-motion";
 
 interface SystemStats {
@@ -42,6 +45,23 @@ export default function SystemControlPage() {
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [showActivityDialog, setShowActivityDialog] = useState(false);
   const [showPermissionsDialog, setShowPermissionsDialog] = useState(false);
+  
+  // Admin Features
+  const [showUserManagement, setShowUserManagement] = useState(false);
+  const [showBalanceControl, setShowBalanceControl] = useState(false);
+  const [showBadgesControl, setShowBadgesControl] = useState(false);
+  const [showServicesControl, setShowServicesControl] = useState(false);
+  
+  // Form states
+  const [manageUserId, setManageUserId] = useState("");
+  const [banReason, setBanReason] = useState("");
+  const [newBalance, setNewBalance] = useState("");
+  const [balanceUserId, setBalanceUserId] = useState("");
+  const [badgeName, setBadgeName] = useState("verified");
+  const [badgeUserId, setBadgeUserId] = useState("");
+  const [serviceUserId, setServiceUserId] = useState("");
+  const [selectedService, setSelectedService] = useState("chat");
+  const [loading, setLoading] = useState(false);
 
   // Verify user is admin
   useEffect(() => {
@@ -81,7 +101,7 @@ export default function SystemControlPage() {
   const loadActivityLogs = async () => {
     try {
       const logs = await getActivityLogs(user?.email);
-      setActivityLogs(logs as any);
+      setActivityLogs(logs as ActivityLog[]);
     } catch (error) {
       console.error("خطأ في تحميل السجلات:", error);
       toast({ variant: "destructive", title: "فشل تحميل السجلات" });
@@ -101,6 +121,90 @@ export default function SystemControlPage() {
     } catch (error) {
       console.error("خطأ في تحميل الأذونات:", error);
       toast({ variant: "destructive", title: "فشل تحميل الأذونات" });
+    }
+  };
+
+  // Admin Actions
+  const handleBanUser = async () => {
+    if (!manageUserId.trim() || !banReason.trim()) {
+      toast({ variant: "destructive", title: "خطأ", description: "يرجى ملء جميع الحقول" });
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      await banUser(manageUserId, banReason);
+      await logAdminAction(user?.uid || "", "ban_user", { userId: manageUserId, reason: banReason });
+      toast({ title: "نجح", description: "تم حظر المستخدم بنجاح" });
+      setShowUserManagement(false);
+      setManageUserId("");
+      setBanReason("");
+    } catch (error) {
+      toast({ variant: "destructive", title: "خطأ", description: "فشل حظر المستخدم" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdateBalance = async () => {
+    if (!balanceUserId.trim() || !newBalance.trim()) {
+      toast({ variant: "destructive", title: "خطأ", description: "يرجى ملء جميع الحقول" });
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      const balance = parseFloat(newBalance);
+      await updateUserBalance(balanceUserId, balance);
+      await logAdminAction(user?.uid || "", "update_balance", { userId: balanceUserId, newBalance: balance });
+      toast({ title: "نجح", description: "تم تحديث الرصيد بنجاح" });
+      setShowBalanceControl(false);
+      setBalanceUserId("");
+      setNewBalance("");
+    } catch (error) {
+      toast({ variant: "destructive", title: "خطأ", description: "فشل تحديث الرصيد" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleToggleBadge = async () => {
+    if (!badgeUserId.trim()) {
+      toast({ variant: "destructive", title: "خطأ", description: "يرجى إدخال معرّف المستخدم" });
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      await toggleUserBadge(badgeUserId, badgeName);
+      await logAdminAction(user?.uid || "", "toggle_badge", { userId: badgeUserId, badge: badgeName });
+      toast({ title: "نجح", description: "تم تحديث الشارة بنجاح" });
+      setShowBadgesControl(false);
+      setBadgeUserId("");
+    } catch (error) {
+      toast({ variant: "destructive", title: "خطأ", description: "فشل تحديث الشارة" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleToggleService = async () => {
+    if (!serviceUserId.trim()) {
+      toast({ variant: "destructive", title: "خطأ", description: "يرجى إدخال معرّف المستخدم" });
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      await toggleUserService(serviceUserId, selectedService);
+      await logAdminAction(user?.uid || "", "toggle_service", { userId: serviceUserId, service: selectedService });
+      toast({ title: "نجح", description: "تم تحديث حالة الخدمة بنجاح" });
+      setShowServicesControl(false);
+      setServiceUserId("");
+    } catch (error) {
+      toast({ variant: "destructive", title: "خطأ", description: "فشل تحديث الخدمة" });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -198,7 +302,7 @@ export default function SystemControlPage() {
               </DialogHeader>
               <div className="space-y-2 max-h-96 overflow-y-auto">
                 {activityLogs.length > 0 ? (
-                  activityLogs.map((log: any) => (
+                  activityLogs.map((log: ActivityLog) => (
                     <div key={log.id} className="p-3 rounded-lg bg-accent/50 border border-border/30 text-sm">
                       <div className="flex justify-between items-start">
                         <span className="font-medium text-foreground">{log.action}</span>
@@ -258,6 +362,214 @@ export default function SystemControlPage() {
             </DialogContent>
           </Dialog>
         </div>
+
+        {/* Supreme Admin Controls */}
+        <Card className="border border-primary/30 bg-gradient-to-br from-primary/5 to-transparent">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Award size={20} className="text-primary" />
+              التحكم الأعلى للمسؤولين
+            </CardTitle>
+            <CardDescription>إدارة متقدمة للمستخدمين والأرصدة والشارات</CardDescription>
+          </CardHeader>
+          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {/* User Management */}
+            <Dialog open={showUserManagement} onOpenChange={setShowUserManagement}>
+              <DialogTrigger asChild>
+                <Button variant="secondary" className="flex items-center gap-2 justify-start h-auto py-4">
+                  <Trash2 size={16} />
+                  <div className="text-left">
+                    <div className="font-bold">إدارة المستخدمين</div>
+                    <div className="text-xs text-muted-foreground">حظر أو حذف مستخدمين</div>
+                  </div>
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>حظر مستخدم</DialogTitle>
+                  <DialogDescription>حظر مستخدم من المنصة نهائياً</DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium text-foreground">معرّف المستخدم أو البريد الإلكتروني</label>
+                    <Input
+                      placeholder="أدخل معرّف المستخدم"
+                      value={manageUserId}
+                      onChange={(e) => setManageUserId(e.target.value)}
+                      className="mt-2"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-foreground">سبب الحظر</label>
+                    <Textarea
+                      placeholder="أدخل سبب حظر هذا المستخدم"
+                      value={banReason}
+                      onChange={(e) => setBanReason(e.target.value)}
+                      className="mt-2"
+                    />
+                  </div>
+                  <Button
+                    variant="destructive"
+                    className="w-full"
+                    onClick={handleBanUser}
+                    disabled={loading}
+                  >
+                    {loading ? "جاري..." : "تأكيد الحظر"}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            {/* Balance Control */}
+            <Dialog open={showBalanceControl} onOpenChange={setShowBalanceControl}>
+              <DialogTrigger asChild>
+                <Button variant="secondary" className="flex items-center gap-2 justify-start h-auto py-4">
+                  <FileText size={16} />
+                  <div className="text-left">
+                    <div className="font-bold">التحكم في الأرصدة</div>
+                    <div className="text-xs text-muted-foreground">تعديل رصيد المحفظة</div>
+                  </div>
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>تحديث رصيد محفظة</DialogTitle>
+                  <DialogDescription>قم بتعديل رصيد محفظة المستخدم</DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium text-foreground">معرّف المستخدم</label>
+                    <Input
+                      placeholder="أدخل معرّف المستخدم"
+                      value={balanceUserId}
+                      onChange={(e) => setBalanceUserId(e.target.value)}
+                      className="mt-2"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-foreground">الرصيد الجديد (ر.س)</label>
+                    <Input
+                      type="number"
+                      placeholder="0.00"
+                      value={newBalance}
+                      onChange={(e) => setNewBalance(e.target.value)}
+                      className="mt-2"
+                    />
+                  </div>
+                  <Button
+                    variant="default"
+                    className="w-full"
+                    onClick={handleUpdateBalance}
+                    disabled={loading}
+                  >
+                    {loading ? "جاري..." : "تحديث الرصيد"}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            {/* Badges Control */}
+            <Dialog open={showBadgesControl} onOpenChange={setShowBadgesControl}>
+              <DialogTrigger asChild>
+                <Button variant="secondary" className="flex items-center gap-2 justify-start h-auto py-4">
+                  <Award size={16} />
+                  <div className="text-left">
+                    <div className="font-bold">إدارة الشارات</div>
+                    <div className="text-xs text-muted-foreground">منح شارات التحقق</div>
+                  </div>
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>تبديل شارة مستخدم</DialogTitle>
+                  <DialogDescription>منح أو إلغاء شارات التحقق والعضوية</DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium text-foreground">معرّف المستخدم</label>
+                    <Input
+                      placeholder="أدخل معرّف المستخدم"
+                      value={badgeUserId}
+                      onChange={(e) => setBadgeUserId(e.target.value)}
+                      className="mt-2"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-foreground">نوع الشارة</label>
+                    <select
+                      value={badgeName}
+                      onChange={(e) => setBadgeName(e.target.value)}
+                      className="w-full mt-2 p-2 border border-border rounded-md bg-background text-foreground"
+                    >
+                      <option value="verified">موثق ✓</option>
+                      <option value="premium">متميز ⭐</option>
+                      <option value="expert">خبير 👨‍💼</option>
+                    </select>
+                  </div>
+                  <Button
+                    variant="default"
+                    className="w-full"
+                    onClick={handleToggleBadge}
+                    disabled={loading}
+                  >
+                    {loading ? "جاري..." : "تبديل الشارة"}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            {/* Services Control */}
+            <Dialog open={showServicesControl} onOpenChange={setShowServicesControl}>
+              <DialogTrigger asChild>
+                <Button variant="secondary" className="flex items-center gap-2 justify-start h-auto py-4">
+                  <ToggleRight size={16} />
+                  <div className="text-left">
+                    <div className="font-bold">تبديل الخدمات</div>
+                    <div className="text-xs text-muted-foreground">تفعيل/تعطيل الخدمات</div>
+                  </div>
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>تبديل خدمات المستخدم</DialogTitle>
+                  <DialogDescription>تفعيل أو تعطيل خدمات معينة للمستخدم</DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium text-foreground">معرّف المستخدم</label>
+                    <Input
+                      placeholder="أدخل معرّف المستخدم"
+                      value={serviceUserId}
+                      onChange={(e) => setServiceUserId(e.target.value)}
+                      className="mt-2"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-foreground">الخدمة</label>
+                    <select
+                      value={selectedService}
+                      onChange={(e) => setSelectedService(e.target.value)}
+                      className="w-full mt-2 p-2 border border-border rounded-md bg-background text-foreground"
+                    >
+                      <option value="chat">المحادثة</option>
+                      <option value="video">الفيديو</option>
+                      <option value="library">المكتبة</option>
+                      <option value="documents">المستندات</option>
+                    </select>
+                  </div>
+                  <Button
+                    variant="default"
+                    className="w-full"
+                    onClick={handleToggleService}
+                    disabled={loading}
+                  >
+                    {loading ? "جاري..." : "تبديل الخدمة"}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </CardContent>
+        </Card>
 
         {/* Additional Control Options */}
         <Card className="border border-border/50">

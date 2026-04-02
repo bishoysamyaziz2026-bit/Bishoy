@@ -72,7 +72,9 @@ export default function BotPage() {
         for (let i = 1; i <= pdf.numPages; i++) {
           const page = await pdf.getPage(i);
           const text = await page.getTextContent();
-          extractedText += text.items.map((item: any) => item.str || "").join(" ");
+          extractedText += text.items
+            .map((item: { str?: string }) => item.str || "")
+            .join(" ");
         }
         return extractedText;
       } else if (file.type.includes("image")) {

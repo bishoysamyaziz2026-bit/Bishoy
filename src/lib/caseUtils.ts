@@ -11,12 +11,13 @@ export async function getUserCases(
   limit: number = 50
 ) {
   try {
-    let query = supabaseClient.from("cases").select("*").order("createdAt", { ascending: false }).limit(limit);
+    const baseQuery = supabaseClient.from("cases").select("*").order("createdAt", { ascending: false }).limit(limit);
 
     // Privacy filter: regular users only see their cases
-    if (userEmail !== "bishoysamy390@gmail.com") {
-      query = query.eq("userId", userId);
-    }
+    const query =
+      userEmail !== "bishoysamy390@gmail.com"
+        ? baseQuery.eq("userId", userId)
+        : baseQuery;
 
     const { data, error } = await query;
 
@@ -33,7 +34,7 @@ export async function getUserCases(
  */
 export async function getCase(caseId: string, userId: string, userEmail: string | null) {
   try {
-    let query = supabaseClient.from("cases").select("*").eq("id", caseId).single();
+    const query = supabaseClient.from("cases").select("*").eq("id", caseId).single();
 
     const { data, error } = await query;
 

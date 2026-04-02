@@ -18,6 +18,10 @@ import AboutPage from "./pages/About";
 import AdminPage from "./pages/Admin";
 import SupremeOfficePage from "./pages/SupremeOffice";
 import SystemControlPage from "./pages/SystemControl";
+import CouncilPage from "./pages/Council";
+import LibraryPage from "./pages/Library";
+import WalletPage from "./pages/Wallet";
+import VideoSessionPage from "./pages/VideoSession";
 
 const queryClient = new QueryClient();
 
@@ -50,6 +54,10 @@ const AppRoutes = () => (
     <Route path="/admin" element={<AdminPage />} />
     <Route path="/supreme-office" element={<SupremeOfficePage />} />
     <Route path="/system-control" element={<AdminOnlyRoute element={<SystemControlPage />} />} />
+    <Route path="/council" element={<CouncilPage />} />
+    <Route path="/video-session" element={<VideoSessionPage />} />
+    <Route path="/library" element={<LibraryPage />} />
+    <Route path="/wallet" element={<WalletPage />} />
     <Route path="*" element={<NotFound />} />
   </Routes>
 );
