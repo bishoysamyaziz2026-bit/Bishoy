@@ -1,3 +1,12 @@
+<<<<<<< HEAD
+<<<<<<< HEAD
+# Bishoy
+=======
+# Welcome to your Lovable project
+
+TODO: Document your project here
+>>>>>>> 95d05da (template: vite_react_shadcn_ts_2026-03-20)
+=======
 # 📚 المستشار AI - AI-Powered Legal Consultation Platform
 
 > An intelligent legal consultation platform powered by Google Gemini AI with document analysis, privacy-first design, and comprehensive activity auditing.
@@ -172,7 +181,7 @@ src/
 | **Database** | Firebase + Supabase |
 | **AI** | Google Gemini Pro |
 | **PDF Handling** | pdfjs-dist |
-| **State** | React Query + Zustand |
+| **State» | React Query + Zustand |
 | **Deployment** | Vercel |
 
 ## 📊 Database Schema
@@ -201,12 +210,12 @@ See [DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md) for full schema details.
 - [x] Activity Logging
 - [x] Database Refinement
 
-### Phase 3 🚀
-- [x] Expert Council
-- [x] Digital Library
-- [x] Wallet System
-- [x] Admin User Controls
-- [x] Jitsi Video Session
+### Phase 3 (Planned)
+- [ ] Advanced Reporting
+- [ ] Multi-language Support
+- [ ] Email Notifications
+- [ ] Video Consultations
+- [ ] Document Templates
 
 ## 🚀 Deployment
 
@@ -284,6 +293,82 @@ npm run test:watch   # Run tests in watch mode
 
 ### Database Connection
 - Verify Supabase credentials
+- Check RLS policies enabled
+- Test query in SQL editor
 
-### Git conflicts
-- Follow steps: `git pull --rebase`, resolve conflicts, `git rebase --continue`
+### Document Upload
+- Ensure pdfjs-dist installed
+- Check file format supported
+- Verify Gemini API key valid
+
+### Authentication
+- Clear browser cookies
+- Check Firebase config
+- Verify email domain
+
+See [QUICK_START.md](./QUICK_START.md) for more troubleshooting.
+
+## 📦 Build Stats
+
+| Metric | Value |
+|--------|-------|
+| Bundle Size | 1.89 MB |
+| Gzipped | 576 KB |
+| Type Errors | 0 |
+| Lint Errors | 0 |
+| Build Time | ~3s |
+
+## 📄 License
+
+This project is licensed under the MIT License - see the LICENSE file.
+
+## 👤 Author
+
+**Bishoy Samy Aziz**
+- Email: bishoysamy390@gmail.com
+- GitHub: @bishoysamyaziz2026-bit
+
+## 🤝 Contributing
+
+Contributions are welcome! Please follow these steps:
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push to the branch
+5. Open a Pull Request
+
+## 📞 Support
+
+For issues and questions:
+1. Check documentation files
+2. Open GitHub issue
+3. Contact: bishoysamy390@gmail.com
+
+## 🙏 Acknowledgments
+
+- Google Gemini AI for legal analysis
+- Firebase for authentication
+- Supabase for database
+- Shadcn/UI for components
+- Vercel for hosting
+
+---
+
+## 🎉 Status
+
+- **Version:** 2.0.0
+- **Status:** Production Ready ✅
+- **Last Updated:** April 2, 2026
+- **Build:** Passing ✅
+- **Tests:** Passing ✅
+
+---
+
+### Quick Links
+- 🚀 [Get Started](./QUICK_START.md)
+- 📖 [Deployment Guide](./DEPLOYMENT_CHECKLIST.md)
+- 🗄️ [Database Setup](./DATABASE_SCHEMA.md)
+- 📊 [Full Summary](./PROJECT_SUMMARY.md)
+
+**Ready to use? Start with [QUICK_START.md](./QUICK_START.md)!** 🚀
+>>>>>>> 8b3a29f (📖 Update README and add Quick Start guide)

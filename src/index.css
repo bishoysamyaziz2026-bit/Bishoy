@@ -1,0 +1,204 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Cairo:wght@300;400;500;600;700;800;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 220 20% 4%;
+    --foreground: 210 40% 98%;
+    --card: 220 20% 6%;
+    --card-foreground: 210 40% 98%;
+    --popover: 220 20% 6%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 210 100% 55%;
+    --primary-foreground: 220 20% 4%;
+    --secondary: 220 15% 12%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 220 15% 12%;
+    --muted-foreground: 215 15% 50%;
+    --accent: 220 15% 10%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 63% 45%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 220 15% 14%;
+    --input: 220 15% 12%;
+    --ring: 210 100% 55%;
+    --radius: 0.75rem;
+    --neon: 210 100% 55%;
+    --neon-glow: 210 100% 65%;
+    --success: 152 70% 45%;
+    --warning: 38 95% 55%;
+    --sidebar-background: 220 20% 5%;
+    --sidebar-foreground: 210 40% 96%;
+    --sidebar-primary: 210 100% 55%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 15% 12%;
+    --sidebar-accent-foreground: 210 40% 96%;
+    --sidebar-border: 220 15% 14%;
+    --sidebar-ring: 210 100% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', 'Cairo', system-ui, -apple-system, sans-serif;
+    overflow-x: hidden;
+  }
+}
+
+/* === GLASS SYSTEM === */
+.glass-panel {
+  background: rgba(8, 12, 22, 0.75);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+}
+
+.glass-frost {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(24px) saturate(150%);
+  -webkit-backdrop-filter: blur(24px) saturate(150%);
+}
+
+.glass-cosmic {
+  background: rgba(8, 12, 22, 0.8);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+}
+
+/* === NEON EFFECTS === */
+.neon-glow {
+  box-shadow: 0 0 20px hsl(var(--neon) / 0.15), 0 0 60px hsl(var(--neon) / 0.05);
+}
+
+.neon-text {
+  text-shadow: 0 0 20px hsl(var(--neon) / 0.4), 0 0 40px hsl(var(--neon) / 0.1);
+}
+
+.neon-border {
+  border-color: hsl(var(--neon) / 0.3);
+  box-shadow: 0 0 15px hsl(var(--neon) / 0.08), inset 0 0 15px hsl(var(--neon) / 0.03);
+}
+
+/* === TEXT GRADIENT === */
+.text-gradient {
+  background: linear-gradient(135deg, hsl(var(--neon)), hsl(var(--neon-glow)), #818cf8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.text-gradient-warm {
+  background: linear-gradient(135deg, hsl(var(--warning)), #f97316);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* === BADGES === */
+.sovereign-badge {
+  @apply inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-[0.3em];
+  background: hsl(var(--neon) / 0.08);
+  border: 1px solid hsl(var(--neon) / 0.2);
+  color: hsl(var(--neon));
+}
+
+/* === SHADOWS === */
+.shadow-3xl {
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
+.shadow-neon {
+  box-shadow: 0 8px 32px hsl(var(--neon) / 0.15), 0 0 0 1px hsl(var(--neon) / 0.1);
+}
+
+/* === ANIMATIONS === */
+.float-gentle {
+  animation: float-gentle 6s ease-in-out infinite;
+}
+
+@keyframes float-gentle {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+}
+
+.float-sovereign {
+  animation: float-gentle 6s ease-in-out infinite;
+}
+
+.pulse-neon {
+  animation: pulse-neon 2s ease-in-out infinite;
+}
+
+@keyframes pulse-neon {
+  0%, 100% { box-shadow: 0 0 20px hsl(var(--neon) / 0.2); }
+  50% { box-shadow: 0 0 40px hsl(var(--neon) / 0.4), 0 0 80px hsl(var(--neon) / 0.1); }
+}
+
+/* === MATTE BLACK === */
+.matte-black {
+  background: #060810;
+}
+
+/* === SCROLLBAR === */
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+/* === SELECTION === */
+::selection {
+  background: hsl(var(--neon) / 0.3);
+}
+
+/* === MICRO INTERACTIONS === */
+.btn-hover {
+  @apply transition-all duration-300 ease-out;
+}
+.btn-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px hsl(var(--neon) / 0.2);
+}
+.btn-hover:active {
+  transform: translateY(0px) scale(0.98);
+}
+
+/* === DOCK iOS STYLE === */
+.floating-dock {
+  background: rgba(8, 12, 22, 0.85);
+  backdrop-filter: blur(40px) saturate(200%);
+  -webkit-backdrop-filter: blur(40px) saturate(200%);
+  border: 1px solid hsl(var(--border));
+  box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.03);
+}
+
+/* === VERIFICATION STEPS === */
+.verification-step {
+  @apply relative;
+}
+.verification-step::after {
+  content: '';
+  @apply absolute left-1/2 -translate-x-1/2 w-px bg-border;
+  height: 40px;
+  bottom: -40px;
+}
+.verification-step:last-child::after {
+  display: none;
+}
+
+/* === INPUT FOCUS === */
+.input-clean {
+  @apply w-full bg-accent border border-border rounded-2xl px-5 py-4 text-base font-medium text-foreground outline-none transition-all duration-300;
+}
+.input-clean:focus {
+  border-color: hsl(var(--neon) / 0.5);
+  box-shadow: 0 0 0 3px hsl(var(--neon) / 0.1), 0 0 20px hsl(var(--neon) / 0.05);
+}
